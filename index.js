@@ -2,14 +2,14 @@ const TelegramBot = require("node-telegram-bot-api");
 const sdk = require("api")("@tron/v4.4.2#39lxa3hl0qj5m48");
 const cron = require("node-cron");
 const HandyStorage = require("handy-storage");
-require('dotenv').config();
+require("dotenv").config();
 
 const storage = new HandyStorage({
   beautify: true,
 });
 
-// Telegram's token 
-const token =process.env.TOKEN;
+// Telegram's token
+const token = process.env.TOKEN;
 const address = process.env.ADDRESS;
 const file_path = "./my_data.json";
 
@@ -44,37 +44,53 @@ cron.schedule("0 0 0 * * *", () => {
   //
 });
 
- function sendNotifcationForBalance(address) {
-    sdk["get-account-info-by-address"]({ address: address })
-      .then((res) => {
-        const { balance } = res.data[0];
-        const message = `<b> Balance</b>: <b>${balance}</b>`;
-        getStoredUsers(message);
-      })
-      .catch((err) => console.error(err));
-  }
-  
-  function sendNotifcationForTransctionDetails(address) {
-    sdk["get-transaction-info-by-account-address"]({ address: address })
-      .then((res) => {
-        const { data } = res;
-  
-        let message = "";
-        data.forEach((el) => {
-          message += `<pre><b> txID</b>: <b>${el.txID}</b> 
+/**
+ * send notification for balance
+ * @param {string} address The address to check
+ * @return {void}
+ */
+function sendNotifcationForBalance(address) {
+  sdk["get-account-info-by-address"]({ address: address })
+    .then((res) => {
+      const { balance } = res.data[0];
+      const message = `<b> Balance</b>: <b>${balance}</b>`;
+      getStoredUsers(message);
+    })
+    .catch((err) => console.error(err));
+}
+
+/**
+ * send notification for transaction details
+ * @param {string} address The address to check
+ * @return {void}
+ */
+function sendNotifcationForTransctionDetails(address) {
+  sdk["get-transaction-info-by-account-address"]({ address: address })
+    .then((res) => {
+      const { data } = res;
+
+      let message = "";
+      data.forEach((el) => {
+        message += `<pre><b> txID</b>: <b>${el.txID}</b> 
               <b> NetFee</b>: <b>${el.net_fee}</b>  
              <b> To</b>: <b>${el.raw_data.contract[0].parameter.value.to_address}</b>
              <b> From</b>: <b>${el.raw_data.contract[0].parameter.value.owner_address}</b>
              <b> Amount</b>: <b>${el.raw_data.contract[0].parameter.value.amount}</b> </pre> \n
              `;
-        });
-  
-        getStoredUsers(message);
-      })
-      .catch((err) => console.error(err));
-  }
+      });
 
+      getStoredUsers(message);
+    })
+    .catch((err) => console.error(err));
+}
+
+/**
+ * Get stored chat ids from users and send bot message
+ * @param {string} message The message to send
+ * @return {void}
+ */
 function getStoredUsers(message) {
+  try {
     const users = storage.state.Ids;
     if (users.length > 0) {
       for (let i = 0; i < users.length; i++) {
@@ -85,4 +101,7 @@ function getStoredUsers(message) {
     } else {
       console.log("no user registered");
     }
+  } catch (e) {
+    throw new Error("oops " + e);
   }
+}
